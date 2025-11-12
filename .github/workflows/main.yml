@@ -1,0 +1,41 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository in GitHub Actions (optional if only deploying to EC2)
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Setup SSH for EC2
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.1
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      # Step 3: Deploy to EC2
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+            # Ensure deployment directory exists
+            mkdir -p /home/deploy/userservice
+            cd /home/deploy/userservice
+
+            # Check if .git exists (repo already cloned)
+            if [ -d .git ]; then
+              echo 'Repository exists, pulling latest changes...'
+              git reset --hard
+              git clean -fd
+              git pull origin main
+            else
+              echo 'Cloning repository for the first time...'
+              git clone -b main https://github.com/integral-hub/user-service.git .
+            fi
+          "
