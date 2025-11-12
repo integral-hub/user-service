@@ -10,32 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
+      # Step 1: Checkout the repository in GitHub Actions (optional if only deploying to EC2)
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Install sshpass (needed to provide SSH password)
-      - name: Install sshpass
-        run: sudo apt-get update && sudo apt-get install -y sshpass
+      # Step 2: Setup SSH for EC2
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-      # Step 3: Deploy to EC2 using SSH with password
+      # Step 3: Deploy to EC2
       - name: Deploy to EC2
-        env:
-          SSH_USER: ${{ secrets.EC2_USER }}
-          SSH_HOST: ${{ secrets.EC2_HOST }}
-          SSH_PASS: ${{ secrets.SSH_USER_PASS }}
         run: |
-          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
             DEPLOY_DIR=/home/deploy/userservice
 
             # Ensure deployment directory exists
             mkdir -p \$DEPLOY_DIR
             cd \$DEPLOY_DIR
 
-            # Fix Git safe directory issue
-            git config --global --add safe.directory \$DEPLOY_DIR
-
-            # Clean and update repository
+            # Check if .git exists (repo already cloned)
             if [ -d .git ]; then
               echo 'Repository exists, pulling latest changes...'
               git reset --hard
@@ -45,8 +40,4 @@ jobs:
               echo 'Cloning repository for the first time...'
               git clone -b main https://github.com/integral-hub/user-service.git .
             fi
-
-            # Run Laravel folder permission fix with password via sudo
-            echo '$SSH_PASS' | sudo -S chown -R www-data:www-data storage bootstrap/cache
-            echo '$SSH_PASS' | sudo -S chmod -R 775 storage bootstrap/cache
           "
