@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\HealthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\V1\UserController;
 
@@ -20,6 +21,7 @@ Route::post('/auth/login', LoginController::class)
 
 Route::post('/v1/users', [UserController::class, 'store']); 
 Route::get('/v1/users/{user}', [UserController::class, 'show']);
+Route::get('/health', [HealthController::class, 'health']);
 
 Route::middleware('auth.token')->group(function () {
     Route::prefix('v1/users')->group(function () {
