@@ -21,7 +21,7 @@ jobs:
     - name: Deploy to EC2
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
-          cd /home/deploy/app || mkdir -p /home/deploy/app
+          cd /home/deploy/app || mkdir -p /home/deploy/userservice
           cd /home/deploy/app
           git pull origin main
           # Run deployment commands, e.g.,
