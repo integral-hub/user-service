@@ -10,20 +10,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # Step 1: Checkout the repository
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
+    # Step 2: Setup SSH with the private key stored in GitHub Secrets
     - name: Setup SSH
-      uses: webfactory/ssh-agent@v0.8.1
+      uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
+    # Step 3: Add EC2 host to known_hosts (optional but safer)
+    - name: Add EC2 host to known_hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+    # Step 4: Connect to EC2 and deploy
     - name: Deploy to EC2
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
-          cd /home/deploy/app || mkdir -p /home/deploy/app
+        ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          set -e
+          # Go to or create app directory
+          mkdir -p /home/deploy/app
           cd /home/deploy/app
-          git pull origin main
-          # Run deployment commands, e.g.,
-          # docker-compose down && docker-compose up -d
-        "
+
+          # If repo already exists, pull updates; otherwise, clone it
+          if [ -d .git ]; then
+            git pull origin main
+          else
+            git clone https://github.com/${{ github.repository }} .
+          fi
+
+          # Run deployment commands (customize as needed)
+          echo "Running deployment commands..."
+          # Example:
+          # docker-compose down
+          # docker-compose up -d --build
+        EOF
