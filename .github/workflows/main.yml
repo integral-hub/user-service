@@ -33,6 +33,9 @@ jobs:
             # Fix Git safe directory issue
             git config --global --add safe.directory \$DEPLOY_DIR
 
+            # Optional: fully overwrite the directory (uncomment if needed)
+            # sudo rm -rf \$DEPLOY_DIR/*
+            
             # Clean and update repository
             if [ -d .git ]; then
               echo 'Repository exists, pulling latest changes...'
@@ -43,6 +46,8 @@ jobs:
               echo 'Cloning repository for the first time...'
               git clone -b main https://github.com/integral-hub/user-service.git .
             fi
-            chown -R www-data:www-data storage bootstrap/cache
-            chmod -R 775 storage bootstrap/cache
+
+            # Ensure proper Laravel permissions using sudo
+            sudo chown -R www-data:www-data storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
           "
